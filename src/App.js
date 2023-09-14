@@ -8,7 +8,7 @@ import "./App.css";
 
 const App = () => {
   const [data, setData] = useState([]);
-
+  const [mapLoaded, setMapLoaded] = useState(false);
 
   useEffect(() => {
     const updatedData = additionalData.map((obj2) => {
@@ -22,20 +22,45 @@ const App = () => {
     });
 
     setData(updatedData);
+  }, []);
+  useEffect(() => {
+    geojson.features?.forEach((feature) => {
+      const countryISO3 = feature.properties.iso_a3;
+      const matchingData = data.find((datas) => datas.ISO3 === countryISO3);
+
+      if (matchingData) {
+        const value = matchingData.Value;
+        let fillColor = "#A2AED4";
+        if (value >= 0 && value < 100000) {
+          fillColor = "#A2AED4";
+        } else if (value >= 100000 && value < 1000000) {
+          fillColor = "#F0F9E8";
+        } else if (value >= 1000000 && value < 10000000) {
+          fillColor = "#CCD7C9";
+        } else if (value >= 10000000 && value < 25000000) {
+          fillColor = "#A8DDB5";
+        } else if (value >= 25000000 && value < 50000000) {
+          fillColor = "#7BCCC4";
+        } else if (value >= 50000000 && value < 100000000) {
+          fillColor = "#43A2CA";
+        } else if (value >= 100000000) {
+          fillColor = "#0868AC";
+        }
+        feature.properties["fill-color"] = fillColor;
+      } else {
+        feature.properties["fill-color"] = "white";
+      }
+    });
   }, [data]);
 
   useEffect(() => {
-    
+    if (!mapLoaded) return;
     const map = new maplibregl.Map({
       container: "map",
       style:
         "https://api.maptiler.com/maps/streets/style.json?key=get_your_own_OpIi9ZULNHzrESv6T2vL",
-      center: [-77.04, 38.907],
-      zoom: 1,
-    //   maxBounds:[
-    //     [-74.04728500751165, 40.68392799015035], // Southwest coordinates
-    //     [-73.91058699000139, 40.87764500765852] // Northeast coordinates
-    // ],
+      center: [0, 20],
+      minZoom: 1,
     });
 
     const popup = new maplibregl.Popup({
@@ -43,60 +68,29 @@ const App = () => {
       closeOnClick: false,
     });
 
-
-    const zoomInButton = document.createElement('button');
-    zoomInButton.textContent = '+';
-    zoomInButton.className = 'mapboxgl-ctrl-icon mapboxgl-ctrl-zoom-in';
-    zoomInButton.addEventListener('click', () => {
+    const zoomInButton = document.createElement("button");
+    zoomInButton.textContent = "+";
+    zoomInButton.className = "mapboxgl-ctrl-icon mapboxgl-ctrl-zoom-in";
+    zoomInButton.addEventListener("click", () => {
       map.zoomIn();
     });
-  
-    const zoomOutButton = document.createElement('button');
-    zoomOutButton.textContent = '-';
-    zoomOutButton.className = 'mapboxgl-ctrl-icon mapboxgl-ctrl-zoom-out';
-    zoomOutButton.addEventListener('click', () => {
+
+    const zoomOutButton = document.createElement("button");
+    zoomOutButton.textContent = "-";
+    zoomOutButton.className = "mapboxgl-ctrl-icon mapboxgl-ctrl-zoom-out";
+    zoomOutButton.addEventListener("click", () => {
       map.zoomOut();
     });
-  
-    map.addControl(new maplibregl.NavigationControl(), 'top-right');
-    map.getContainer().appendChild(zoomInButton); 
+
+    map.addControl(new maplibregl.NavigationControl(), "top-right");
+    map.getContainer().appendChild(zoomInButton);
     map.getContainer().appendChild(zoomOutButton);
+
     map.on("load", () => {
       map.addSource("states", {
         type: "geojson",
         data: geojson,
       });
-
-      geojson.features.forEach((feature) => {
-        const countryISO3 = feature.properties.iso_a3;
-        const matchingData = data.find((datas) => datas.ISO3 === countryISO3);
-        console.log(matchingData);
-
-        if (matchingData) {
-          const value = matchingData.Value;
-          let fillColor = "#A2AED4";
-          if (value >= 0 && value < 100000) {
-            fillColor = "#A2AED4";
-          } else if (value >= 100000 && value < 1000000) {
-            fillColor = "#F0F9E8";
-          } else if (value >= 1000000 && value < 10000000) {
-            fillColor = "#CCD7C9";
-          } else if (value >= 10000000 && value < 25000000) {
-            fillColor = "#A8DDB5";
-          } else if (value >= 25000000 && value < 50000000) {
-            fillColor = "#7BCCC4";
-          } else if (value >= 50000000 && value < 100000000) {
-            fillColor = "#43A2CA";
-          } else if (value >= 100000000) {
-            fillColor = "#0868AC";
-          }
-          feature.properties["fill-color"] = fillColor;
-        }
-        else {
-          feature.properties["fill-color"] = "white";
-      }
-    }
-      );
 
       map.addLayer({
         id: "states-layer",
@@ -118,6 +112,7 @@ const App = () => {
           const countryName = feature.properties.name;
           const countryISO3 = feature.properties.iso_a3;
           const matchingData = data.find((data) => data.ISO3 === countryISO3);
+          console.log(matchingData);
           if (matchingData) {
             const value = matchingData.Value;
             const unit = matchingData.Unit;
@@ -146,11 +141,25 @@ const App = () => {
     return () => {
       map.remove();
     };
+  }, [mapLoaded]);
+
+  useEffect(() => {
+    const map = new maplibregl.Map({
+      container: "map",
+      style:
+        "https://api.maptiler.com/maps/streets/style.json?key=get_your_own_OpIi9ZULNHzrESv6T2vL",
+      center: [0, 20],
+      minZoom: 1,
+    });
+
+    map.once("data", () => {
+      setMapLoaded(true);
+    });
   }, []);
 
   return (
     <div>
-      <div id="map" style={{ height: "80vh" }} className="fixed-map"></div>
+      <div id="map" style={{ height: "95vh" }} className="fixed-map"></div>
     </div>
   );
 };
