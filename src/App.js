@@ -8,7 +8,6 @@ import "./App.css";
 
 const App = () => {
   const [data, setData] = useState([]);
-  const [mapLoaded, setMapLoaded] = useState(false);
 
   useEffect(() => {
     const updatedData = additionalData.map((obj2) => {
@@ -54,12 +53,12 @@ const App = () => {
   }, [data]);
 
   useEffect(() => {
-    if (!mapLoaded) return;
+    
     const map = new maplibregl.Map({
       container: "map",
       style:
         "https://api.maptiler.com/maps/streets/style.json?key=get_your_own_OpIi9ZULNHzrESv6T2vL",
-      center: [0, 20],
+      center: [0, 22],
       minZoom: 1,
     });
 
@@ -141,21 +140,8 @@ const App = () => {
     return () => {
       map.remove();
     };
-  }, [mapLoaded]);
-
-  useEffect(() => {
-    const map = new maplibregl.Map({
-      container: "map",
-      style:
-        "https://api.maptiler.com/maps/streets/style.json?key=get_your_own_OpIi9ZULNHzrESv6T2vL",
-      center: [0, 20],
-      minZoom: 1,
-    });
-
-    map.once("data", () => {
-      setMapLoaded(true);
-    });
-  }, []);
+  }, [data]);
+;
 
   return (
     <div>
